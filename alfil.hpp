@@ -14,5 +14,6 @@ class alfil : public pieza{
 bool alfil::validarMovimiento( int x, int y ){
     bool valido = false;
     if( x - y == (*this).getX()-(*this).getY()) valido = true;
+    if( x + y == (*this).getX()+(*this).getY()) valido = true;
     return valido;
 }

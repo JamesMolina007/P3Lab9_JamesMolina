@@ -8,6 +8,8 @@
 #include "alfil.hpp"
 #include "torre.hpp"
 #include <string>
+#include "partida.hpp"
+#include <vector>
 #include <fstream>
 #include <cstdlib>
 
@@ -20,6 +22,7 @@ void tablero();
 int getCoordenadaX( string coordenada, int eje);
 int getCoordenadaY( string coordenada, int eje);
 void mover(int,int,int,int);
+void llenar();
 
 rey _r1, _r2;
 pieza matrix[8][8];
@@ -32,10 +35,13 @@ rey R;
 alfil a;
 peon p;
 torre t;
+string partida_n;
+partida temp;
+vector <partida> partidas;
 
-ofstream Partida("Partida.txt", ios::app );
 
 int main(){
+    llenar();
     int opcion;
     do{
         cout << "0- Salir" << endl;
@@ -110,8 +116,6 @@ void escogerPieza( ){
     aux->setX( aux->posX2 );
     aux->setY( aux->posY2 );
     player2->setPieza( *aux );
-    cout << "Direccion " << &aux << endl;
-    cout << "Contenido " << aux->toString();
 }
 
 
@@ -119,14 +123,13 @@ void jugar(){
     string j1, j2, partida;
     cout << "Ingrese el nombre de la partida: ";
     cin >> partida; 
+    partida_n = partida;
     cout << endl;
     cout << "Ingrese el nombre del jugador #1: ";
     cin >> j1;
     player1->setNombre( j1 );
     cout << "Ingrese el nombre del jugador #2: ";
     cin >> j2;
-    Partida << j1 << " VS. " << j2 << endl;
-    Partida << partida << endl;
     player2->setNombre( j2 );
     escogerPieza();
     _r1.setY(0);
@@ -163,6 +166,13 @@ void tablero(){
 }
 
 void comienzo(){
+    partida pp;
+    string simb = aux->toString();
+    if( simb == "c" )pp.setPieza("caballo");
+    if( simb == "t" )pp.setPieza("torre");
+    if( simb == "r" )pp.setPieza("reina");
+    if( simb == "a" )pp.setPieza("alfil");
+    if( simb == "p" )pp.setPieza("peon");
     char continuar;
     int cont = 1;
     do{   
@@ -177,14 +187,14 @@ void comienzo(){
         aux->setY( piezaY );
         int paraderoX = (getCoordenadaX( coordenada, 2)-8)*-1 ;
         int paraderoY = (getCoordenadaY( coordenada, 2 ));
-       if( aux->validarMovimiento(paraderoX, paraderoY) ){
+       if( aux->validarMovimiento(paraderoX, paraderoY) || _r1.validarMovimiento(paraderoX, paraderoY)){
+            pp.setMovimiento( coordenada );
             mover( piezaX,piezaY,paraderoX,paraderoY);
         }
         else{
             cout << endl << endl;
             cout << "Movimiento no permitido" << endl;
         }
-        Partida << "[" << paraderoX << "," << paraderoY << "];";
         tablero();
         cout << "Jugador #2: " << endl;
         cout << "Ingrese las coordenadas(Ejemplo->[e1,f2]): ";
@@ -196,13 +206,13 @@ void comienzo(){
         paraderoX = (getCoordenadaX( coordenada, 2 ) -8)*-1 ;
         paraderoY = getCoordenadaY( coordenada, 2 );
         if( aux->validarMovimiento(paraderoX, paraderoY) ){
+            pp.setMovimiento( coordenada );
             mover( piezaX,piezaY,paraderoX,paraderoY);
         }
         else{
             cout << endl << endl;
             cout << "Movimiento no permitido" << endl;
         }
-       Partida << "[" << paraderoX << "," << paraderoY << "];";
         tablero();
         if( cont % 2 ){
             cout << "Desea continuar[s/n]: ";
@@ -210,9 +220,20 @@ void comienzo(){
         }
         cont++;
     }while( continuar != 'n' );
+    Partida << partida_n;
+    pp.guardarpartida();
+    partidas.push_back(pp);
     delete player1;
     delete player2;
-    Partida << endl << "------------------------------" << endl;
+    pieza vacio;
+   for (size_t i = 0; i < 8; i++)
+   {
+       for (size_t j = 0; j < 8; j++)
+       {
+           matrix[i][j] = vacio;
+       }
+       
+   }
 }
 
 int getCoordenadaX( string coordenada, int eje ){
@@ -232,6 +253,110 @@ void mover( int x, int y, int fx, int fy ){
     matrix[fx][fy] = temp;
 }
 
+void llenar(){
+    ifstream Partida("bitacoraPartidas.txt", ios::in );
+    string part_n,pieza;
+    string movimiento;
+    string linea;
+    while( Partida >> part_n >> pieza >> movimiento >> linea){
+       partida p;
+       p.setNombre(part_n);
+       p.setPieza(pieza);
+       string acum="";
+        for (size_t i = 0; i < movimiento.size(); i++){
+            if(movimiento[i] == ';'){
+                p.setMovimiento(acum);
+                acum="";
+            }else{
+                acum+=movimiento[i];
+            }
+        }
+        partidas.push_back(p);
+    }
+}
+
 void recrear(){
+    int num;
+    cout << endl;
+   for (size_t i = 0; i < partidas.size(); i++){
+       cout << i << "- " << partidas[i].getNombre() << endl;
+   }
+   pieza vacio;
+   for (size_t i = 0; i < 8; i++)
+   {
+       for (size_t j = 0; j < 8; j++)
+       {
+           matrix[i][j] = vacio;
+       }
+       
+   }
    
+   cout << "Ingrese el numero de partida que desea recrear: ";
+   cin>> num;
+   string simb =  partidas[num].getPieza();
+   cout << simb << endl;
+   string ss(1, simb[0]);
+   cout << ss << endl;
+   char continuar;
+    pieza aux3;
+    _r1.setY(0);
+    _r1.setX(4);
+    _r1.setSimbolo("R");
+    _r2.setSimbolo("R");
+    _r2.setY(7);
+    _r2.setX(4);
+    matrix[0][4] = _r1;
+    matrix[7][4] = _r2;
+    cout << "SImboolo " << ss[0] << endl;
+    switch( ss[0] ){
+        case 'T':{
+            aux3.setSimbolo("t");
+            matrix[0][0] = aux3;
+            matrix[7][7] = aux3;
+        }
+            break;
+        case 'R':{
+             aux3.setSimbolo("r");
+             matrix[0][3] = aux3;
+             matrix[7][3] = aux3;
+        }
+            break;
+        case 'A':{
+            aux3.setSimbolo("a");
+            matrix[0][3] = aux3;
+            matrix[7][5] = aux3;
+        }
+            break; 
+        case 'P':{
+             aux3.setSimbolo("p");
+             matrix[1][4] = aux3;
+             matrix[6][4] = aux3;
+        }
+            break;
+        case 'C':{
+             aux3.setSimbolo("c");
+             matrix[0][1] = aux3;
+             matrix[7][6] = aux3;
+        }
+            break;   
+    }
+    for (size_t i = 0; i < 8; i++){
+        cout << 8 - i << " ";
+        for (size_t j = 0; j < 8; j++){
+            cout << "[";
+            if( matrix[i][j].toString() == "" ) cout << " ]";
+            else cout << matrix[i][j].toString() << "]";
+        }
+        cout << endl;
+    }
+    cout << "   a  b  c  d  e  f  g  h" << endl;
+   for (size_t i = 0; i < partidas[i].getMovimientos().size(); i++){
+        int piezaX = (getCoordenadaX( partidas[num].getMovimientos()[i], 1)-8)*-1;
+        int piezaY = (getCoordenadaY( partidas[num].getMovimientos()[i], 1 ));
+        matrix[piezaX][piezaX].setSimbolo(aux3.toString());
+        tablero();
+        cout << "Desea continuar[s/n]: ";
+        cin >> continuar;
+        if( continuar == 'n' ) break;
+   }
 }
